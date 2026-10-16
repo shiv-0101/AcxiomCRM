@@ -1,0 +1,33 @@
+{
+  "name": "acxiomcrm-frontend",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "lint": "oxlint",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8",
+    "react-router-dom": "^6.26.2",
+    "chart.js": "^4.4.6",
+    "react-chartjs-2": "^5.2.0",
+    "axios": "^1.7.7",
+    "react-hot-toast": "^2.4.1",
+    "react-hook-form": "^7.53.0",
+    "date-fns": "^3.6.0",
+    "lucide-react": "^0.441.0"
+  },
+  "devDependencies": {
+    "@types/node": "^24.13.3",
+    "@types/react": "^19.2.18",
+    "@types/react-dom": "^19.2.7",
+    "@vitejs/plugin-react": "^6.1.1",
+    "oxlint": "^1.81.0",
+    "typescript": "~6.0.2",
+    "vite": "^8.3.0"
+  }
+}

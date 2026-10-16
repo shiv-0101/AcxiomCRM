@@ -1,0 +1,31 @@
+const winston = require('winston');
+const path = require('path');
+
+const logDir = path.resolve('./logs');
+const { createLogger, format, transports } = winston;
+const { combine, timestamp, printf, colorize, errors } = format;
+
+const logFormat = printf(({ level, message, timestamp, stack }) => {
+  return `${timestamp} [${level}]: ${stack || message}`;
+});
+
+const logger = createLogger({
+  level: process.env.NODE_ENV === 'production' ? 'info' : 'debug',
+  format: combine(
+    timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
+    errors({ stack: true }),
+    logFormat
+  ),
+  transports: [
+    new transports.Console({
+      format: combine(colorize(), timestamp({ format: 'HH:mm:ss' }), logFormat),
+    }),
+  ],
+});
+
+if (process.env.NODE_ENV === 'production') {
+  logger.add(new transports.File({ filename: `${logDir}/error.log`, level: 'error' }));
+  logger.add(new transports.File({ filename: `${logDir}/combined.log` }));
+}
+
+module.exports = logger;
