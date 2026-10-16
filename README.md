@@ -1,84 +1,65 @@
-# AcxiomCRM
+# AxiomCRM
 
-AcxiomCRM is a local-first customer relationship workspace for sales teams. It combines customer records, leads, opportunity pipeline, follow-ups, role-aware access, audit logging, and a dashboard backed by SQLite.
+AxiomCRM is a full-stack customer relationship workspace for sales teams. It brings customer records, leads, opportunities, follow-ups, role-based access, audit logging, and pipeline analytics into one local-first application.
 
-## Current implementation
+## Screenshots
 
-- Responsive React/Vite workspace with authenticated login, dashboard KPIs, pipeline chart, follow-up agenda, searchable record tables, and create flows.
-- Express API with JWT authentication, role-based scoping, validation, rate limiting, security middleware, audit logs, and SQLite schema/seed data.
-- External integrations are intentionally unconfigured. No API keys or private service credentials are required for local CRM workflows.
+View the application screenshots here:
 
-## Architecture and implementation guide
+[Open the AxiomCRM screenshots](https://docs.google.com/document/d/1M1eGn83xrAyO79fZErNv_ufPJt91Ffq4U9Ipog1mv0g/edit?usp=sharing)
 
-### Frontend
+## Features
 
-The frontend is a React 19 and TypeScript application built with Vite. `frontend/src/App.tsx` owns the authenticated workspace shell and composes the dashboard, record tables, create dialogs, responsive navigation, and login screen. API access is centralized in `frontend/src/api/client.ts`; the Axios interceptor attaches the JWT stored in `localStorage` and redirects expired sessions to login. `frontend/src/contexts/AuthContext.tsx` owns login, logout, session restoration, and role checks. Styling is intentionally kept in `frontend/src/App.css` and `frontend/src/index.css` so the visual system can be adjusted without changing API logic.
+- JWT login, logout, registration, password hashing, account lockout, and protected API routes
+- Role-aware access for `Admin`, `Manager`, and `SalesExecutive`
+- Customer, lead, opportunity, and follow-up CRUD workflows
+- Soft deactivation for records where permanent deletion is unsafe
+- Client-side and server-side validation
+- Lead, opportunity, and follow-up business rules
+- Dashboard KPI cards, upcoming follow-ups, and a Chart.js pipeline chart
+- Search and filtering through API-backed record views
+- Audit entries for important create, update, delete, login, role, and password operations
+- SQLite development database with deterministic seed data
+- Security middleware, CORS configuration, rate limits, centralized errors, and request logging
 
-The current user flows are:
+## Technology
 
-1. Sign in with a seeded or configured account.
-2. View role-scoped dashboard KPIs, pipeline value, and upcoming follow-ups.
-3. Search customers, leads, opportunities, and follow-ups.
-4. Create records through validated backend requests.
-5. Move between workspace sections using the responsive sidebar.
+- Frontend: React 19, TypeScript, Vite, Axios, Chart.js, React Hook Form, Lucide icons
+- Backend: Node.js, Express, JWT, bcryptjs, express-validator, Helmet, compression, Winston
+- Database: SQLite through `better-sqlite3`
+- Tests: Jest and Supertest
 
-### Backend
+## Repository structure
 
-The backend is an Express application. `backend/src/server.js` initializes SQLite, seeds development data, and starts the HTTP server. `backend/src/app.js` configures Helmet, CORS, JSON parsing, compression, request logging, rate limits, the health endpoint, routes, and centralized errors.
-
-Routes are separated by business area:
-
-- `/api/auth` handles login, logout, registration, and the current user.
-- `/api/dashboard` returns role-scoped KPIs and chart data.
-- `/api/customers`, `/api/leads`, `/api/opportunities`, and `/api/followups` provide CRUD workflows.
-- `/api/activities` stores interaction history.
-- `/api/users` provides administrative user management.
-- `/api/reports` provides pipeline, conversion, audit, and activity reports.
-
-Protected routes use JWT authentication from `backend/src/middleware/auth.js`. Sales executives are scoped to their assigned records; managers and administrators can access broader team data. Request validation uses `express-validator`, and mutations write audit entries through `backend/src/utils/auditLog.js`.
-
-### Database and seed data
-
-SQLite schema creation and indexes live in `backend/src/config/database.js`. The first backend start creates `backend/data/acxiomcrm.db`; `backend/src/config/seed.js` then creates roles, demo users, customers, leads, opportunities, follow-ups, and audit records. The database file is ignored by Git and should never be committed.
-
-For production, replace the startup seed behavior with a migration/deployment step and provide a managed database or a durable SQLite volume. Passwords are hashed with `bcryptjs`; JWT signing and database paths are configured through environment variables.
-
-### Adding a new CRM entity
-
-1. Add the table, constraints, and indexes in `backend/src/config/database.js`.
-2. Add seed fixtures only when deterministic local data is useful.
-3. Create a route module with authentication, validation, role checks, pagination, and consistent `{ success, data, message }` responses.
-4. Add the typed domain shape and API methods to `frontend/src/types/index.ts` and `frontend/src/api/client.ts`.
-5. Add the smallest UI surface in `frontend/src/App.tsx`, keeping network calls in the API client.
-6. Run the backend tests, frontend build, and an authenticated request against the new endpoint.
-
-### External integrations
-
-No external service is called during startup. Integration credentials belong in backend environment variables only. Add a dedicated adapter under `backend/src/integrations/`, define its configuration in `backend/.env.example`, and return an explicit configuration error when required variables are empty. Do not expose private keys through `VITE_*` variables.
-
-### Validation checklist
-
-```powershell
-# Terminal 1
-cd backend
-npm install
-npm start
-
-# Terminal 2
-cd frontend
-npm install
-npm run build
-npm run dev
-
-# API smoke checks
-Invoke-RestMethod http://localhost:5000/api/health
+```text
+AxiomCRM/
+├── backend/
+│   ├── src/
+│   │   ├── config/          Database schema and seed data
+│   │   ├── middleware/      Authentication, authorization, and errors
+│   │   ├── routes/          REST API modules and request handlers
+│   │   └── utils/            Logging and audit helpers
+│   └── tests/               API acceptance tests
+├── frontend/
+│   ├── src/
+│   │   ├── api/             Centralized Axios API client
+│   │   ├── contexts/        Authentication state
+│   │   ├── types/           Frontend domain contracts
+│   │   └── App.tsx          Workspace UI and CRM workflows
+│   └── public/
+├── README.md
+└── .gitignore
 ```
 
-After login, verify the dashboard request, a list request, and one create flow. Keep the backend running while using the frontend; a refused request to `localhost:5000` means the API process is not running or its native SQLite dependency did not install successfully.
+## Requirements
+
+- Node.js 20 or newer
+- npm
+- A compatible native build environment for `better-sqlite3` when a prebuilt binary is unavailable
 
 ## Run locally
 
-Prerequisites: Node.js 20+ and npm.
+### 1. Start the backend
 
 ```powershell
 cd backend
@@ -86,7 +67,11 @@ npm install
 npm start
 ```
 
-In another terminal:
+The API runs at `http://localhost:5000` and creates `backend/data/acxiomcrm.db` on first start.
+
+### 2. Start the frontend
+
+Open a second terminal:
 
 ```powershell
 cd frontend
@@ -94,26 +79,130 @@ npm install
 npm run dev
 ```
 
-Frontend: http://localhost:5173  
-API health: http://localhost:5000/api/health
+The frontend runs at `http://localhost:5173`.
 
-The backend creates `backend/data/acxiomcrm.db` and seeds demo data on first start. Demo accounts:
+Copy the environment templates before changing local configuration:
 
-- `admin` / `Admin@123`
-- `manager` / `Manager@123`
-- `sales1` / `Sales@123`
+```powershell
+Copy-Item backend/.env.example backend/.env
+Copy-Item frontend/.env.example frontend/.env
+```
 
-Copy `backend/.env.example` to `backend/.env` and `frontend/.env.example` to `frontend/.env` when customising ports or API URLs. Leave integration variables empty until the relevant service is configured.
+The frontend API URL defaults to `http://localhost:5000/api`. Override it with `VITE_API_BASE_URL` in `frontend/.env`.
 
-## Commands
+## Demo accounts
 
-Frontend: `npm run build`, `npm run lint`  
-Backend: `npm test`, `npm run lint`  
+| Role | Username | Password |
+| --- | --- | --- |
+| Admin | `admin` | `Admin@123` |
+| Manager | `manager` | `Manager@123` |
+| SalesExecutive | `sales1` | `Sales@123` |
 
-## Environment and integrations
+These credentials are development seed data only. Change authentication and secrets before production use.
 
-Backend configuration lives in `backend/.env.example`, including database path, JWT settings, CORS origin, rate limits, and password policy. The current application has no external provider dependency; future providers should be added behind a backend service adapter and configured only through environment variables.
+## API quick test
 
-## Known limitation
+Check the server:
 
-The backend uses `better-sqlite3`, which needs a compatible native prebuild or local build toolchain for the selected Node.js version. The frontend build is verified. If backend installation cannot obtain a compatible binary, use a supported Node.js LTS version or install the required native build tools before starting the API.
+```powershell
+Invoke-RestMethod http://localhost:5000/api/health
+```
+
+Login and keep the JWT:
+
+```powershell
+$login = Invoke-RestMethod `
+  -Uri http://localhost:5000/api/auth/login `
+  -Method Post `
+  -ContentType 'application/json' `
+  -Body '{"username":"admin","password":"Admin@123"}'
+
+$headers = @{ Authorization = "Bearer $($login.token)" }
+```
+
+Call the protected customers API:
+
+```powershell
+Invoke-RestMethod `
+  -Uri http://localhost:5000/api/customers `
+  -Headers $headers
+```
+
+Create a customer:
+
+```powershell
+Invoke-RestMethod `
+  -Uri http://localhost:5000/api/customers `
+  -Method Post `
+  -Headers $headers `
+  -ContentType 'application/json' `
+  -Body '{"customerName":"Test Company","email":"test@example.com","phone":"9999888877"}'
+```
+
+The API rejects invalid email or phone values with HTTP `400`.
+
+## API modules
+
+- `GET/POST /api/auth/login`, `/api/auth/register`, `/api/auth/logout`, `/api/auth/me`
+- `GET/POST/PUT/DELETE /api/customers`
+- `GET/POST/PUT/DELETE /api/leads`, plus `POST /api/leads/:id/convert`
+- `GET/POST/PUT/DELETE /api/opportunities`
+- `GET/POST/PUT/DELETE /api/followups`
+- `GET/POST/PUT/DELETE /api/activities`
+- `GET/POST/PUT /api/users` and administrative password/unlock operations
+- `/api/dashboard` for role-scoped KPIs and chart data
+- `/api/reports/*` for pipeline, conversion, audit, and activity reports
+- `GET /api/health` for service health
+
+All protected endpoints require:
+
+```text
+Authorization: Bearer <JWT>
+```
+
+## Architecture
+
+The Express entry point initializes the database, seed data, middleware, routes, and server. Route modules combine request handling with domain access through the shared SQLite layer. Authentication and role scope are centralized in middleware, validation uses `express-validator`, and mutations write audit records through the audit utility.
+
+The React application uses a centralized Axios client. `AuthContext` owns session state and JWT persistence. The main workspace renders role-aware dashboard data and API-backed record views. The frontend does not call external services directly.
+
+## Database and integrations
+
+SQLite schema, constraints, indexes, and relationships are defined in `backend/src/config/database.js`. Seed data is created by `backend/src/config/seed.js`. Database files are ignored by Git.
+
+External integrations are intentionally unconfigured. No API key is required for local startup. Add future providers behind backend adapters, keep credentials in environment variables, and never expose private values through `VITE_*` variables.
+
+## Validation and tests
+
+Frontend:
+
+```powershell
+cd frontend
+npm run build
+npm run lint
+```
+
+Backend:
+
+```powershell
+cd backend
+npm test
+npm run lint
+```
+
+The acceptance suite in `backend/tests/acceptance.test.js` verifies protected routes, invalid input rejection, opportunity and follow-up rules, role authorization, sales scope, CRUD behavior, and audit logging using an isolated SQLite database.
+
+## Security notes
+
+- Passwords are stored as bcrypt hashes, never plaintext.
+- JWT bearer tokens protect API endpoints; no authentication cookies are used.
+- Role authorization is enforced server-side and cannot be bypassed by changing the UI.
+- Request bodies are validated on the server even when browser validation is bypassed.
+- Helmet, CORS, rate limiting, body size limits, and centralized error handling are enabled.
+- Replace the development JWT secret and seed credentials before deployment.
+
+## Known limitations
+
+- SQLite is intended for local development and small deployments; production should use a durable managed database or volume strategy.
+- `better-sqlite3` may require native build tools if npm cannot download a compatible prebuilt binary.
+- The current backend organizes domain handlers by route module; a larger production deployment could further split controllers, services, repositories, and view models.
